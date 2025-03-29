@@ -1,9 +1,9 @@
 const db = require("../db");
 
-const getDriverByPhone = async (phoneNumber) => {
+const getDriverByPhoneAndLicense = async (phoneNumber, licenseNumber) => {
   const result = await db.query(
-    "SELECT * FROM drivers WHERE phone_number = ?",
-    [phoneNumber]
+    "SELECT * FROM drivers WHERE phone_number = ? AND license_number = ?",
+    [phoneNumber, licenseNumber]
   );
   return result.length > 0 ? result[0] : null;
 };
@@ -13,7 +13,7 @@ const createDriver = async (phoneNumber, licenseNumber) => {
     "INSERT INTO drivers (phone_number, license_number) VALUES (?, ?)",
     [phoneNumber, licenseNumber]
   );
-  return getDriverByPhone(phoneNumber);
+  return getDriverByPhoneAndLicense(phoneNumber, licenseNumber);
 };
 
 const saveOtp = async (phoneNumber, otp) => {
@@ -38,7 +38,7 @@ const clearOtp = async (phoneNumber) => {
 };
 
 module.exports = {
-  getDriverByPhone,
+  getDriverByPhoneAndLicense,
   createDriver,
   saveOtp,
   verifyOtp,
