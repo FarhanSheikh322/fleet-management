@@ -1,0 +1,1 @@
+exports.getBookings = (req, res) => res.send('List of bookings');
