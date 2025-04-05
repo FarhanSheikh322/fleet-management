@@ -1,33 +1,14 @@
 const express = require("express");
-const config = require("../../config");
-const carRoute = require('./carRoutes');
-
 const router = express.Router();
 
-const appRoutes = [
-  {
-    path: 'carcontroller',
-    route: carRoute,
-  }
-];
+// Import all route modules
+const carRoutes = require("./carRoutes");
+const driverRoutes = require("./driverRoutes");
+// const rideRoutes = require("./rideRoutes");
 
-const devRoutes = [
-  // routes available only in development mode
-  //   {
-  //     path: "/docs",
-  //     route: docsRoute,
-  //   },
-];
-
-appRoutes.forEach((route) => {
-  router.use(route.path, route.route);
-});
-
-/* istanbul ignore next */
-if (config.env === "development") {
-  devRoutes.forEach((route) => {
-    router.use(route.path, route.route);
-  });
-}
+// Mount routes
+router.use("/cars", carRoutes);
+router.use("/drivers", driverRoutes);
+// router.use("/rides", rideRoutes);
 
 module.exports = router;

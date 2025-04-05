@@ -1,9 +1,13 @@
 const express = require("express");
-const carController = require('../../controllers/carController');
-
 const router = express.Router();
+const CarController = require("../../controllers/carController");
+const { authenticateAdmin } = require("../../middlewares/auth");
 
-router.get("/", carController.getAllCarDetails);
-// router.post("/", carController.addCar);
+// Car routes
+router.post("/addCar", CarController.addCar);
+router.put("/updateCar/:id", CarController.updateCar);
+router.get("/getCar/:id", CarController.getCar);
+router.get("/getAllCars", CarController.getAllCars);
+router.delete("/deleteCar/:id", CarController.deleteCar);
 
 module.exports = router;

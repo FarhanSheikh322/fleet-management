@@ -1,82 +1,204 @@
-const driverService = require("../services/driverService");
-const otpGenerator = require("otp-generator");
+const driverService = require('../services/driverService');
+const { validateDriverInput } = require('../util/validators');
 
-module.exports = {
-  verifyDriverDetails: async (req, res) => {
+class DriverController {
+  static async selfSignup(req, res) {
     try {
-      const { phone, license_number } = req.body;
-      const isPhoneExists = await driverService.checkPhoneExists(phone);
-      const isLicenseExists =
-        await driverService.checkLicenseExists(license_number);
+      const { contact_no, license_no } = req.body;
+      const exists = await driverService.checkDriverExists(
+        contact_no,
+        license_no
+      );
+      if (exists) {
+        return res.status(400).json({ error: "Driver already exists" });
+      }
 
-      if (isPhoneExists)
+      const otpSent = await driverService.sendOTP(contact_no);
+      if (!otpSent) {
         return res
-          .status(400)
-          .json({ message: "Phone number already registered" });
-      if (isLicenseExists)
-        return res
-          .status(400)
-          .json({ message: "License number already registered" });
+          .status(429)
+          .json({ error: "OTP already sent. Please wait." });
+      }
 
-      const otp = otpGenerator.generate(6, {
-        upperCase: false,
-        specialChars: false,
-      });
-      await driverService.sendOtp(phone, otp);
-
-      res.status(200).json({ message: "OTP sent for verification" });
+      res.json({ message: "OTP sent successfully" });
     } catch (error) {
-      res.status(500).json({ error: "Error verifying driver details" });
+      res.status(500).json({ error: error.message });
     }
-  },
-  registerDriver: async (req, res) => {
+  }
+
+  static async verifyOTP(req, res) {
     try {
-      const { name, phone, license_number, license_image } = req.body;
-      const result = await driverService.registerDriver({
-        name,
-        phone,
-        license_number,
-        license_image,
-      });
-      res
-        .status(201)
-        .json({
-          message: "Driver registered successfully",
-          driverId: result[0].insertId,
+      const { name, age, contact_no, license_no, license_image, status, otp } =
+        req.body;
+
+      // ✅ Verify OTP (Replace with actual validation)
+      const isValidOTP = await driverService.verifyOTP(contact_no, otp);
+      if (!isValidOTP) {
+        return res.status(400).json({ message: "Invalid OTP" });
+      }
+
+      // ✅ Check if driver exists
+      let driver = await Driver.findOne({ where: { contact_no } });
+      if (!driver) {
+        driver = await Driver.create({
+          name,
+          age,
+          contact_no,
+          license_no,
+          license_image,
+          status,
         });
-    } catch (error) {
-      res.status(500).json({ error: "Error registering driver" });
-    }
-  },
-  loginDriver: async (req, res) => {
-    try {
-      const { phone } = req.body;
-      const driver = await driverService.verifyDriver(phone);
-      if (!driver) return res.status(404).json({ message: "Driver not found" });
+      }
 
-      const otp = otpGenerator.generate(6, {
-        upperCase: false,
-        specialChars: false,
+      // ✅ Generate JWT Tokens
+      const accessToken = jwt.sign(
+        { id: driver.id, contact_no: driver.contact_no },
+        process.env.ACCESS_SECRET,
+        { expiresIn: "15m" } // Access token valid for 15 minutes
+      );
+      const refreshToken = jwt.sign(
+        { id: driver.id },
+        process.env.REFRESH_SECRET,
+        { expiresIn: "7d" } // Refresh token valid for 7 days
+      );
+
+      return res.status(201).json({
+        message: "Signup successful",
+        accessToken,
+        refreshToken,
+        driver: {
+          id: driver.id,
+          name: driver.name,
+          contact_no: driver.contact_no,
+          license_no: driver.license_no,
+          status: driver.status,
+        },
       });
-      await driverService.sendOtp(phone, otp);
-      res.status(200).json({ message: "OTP sent" });
     } catch (error) {
-      res.status(500).json({ error: "Error logging in" });
+      console.error("Signup Error:", error);
+      res.status(500).json({ message: "Internal Server Error" });
     }
-  },
-  verifyOtp: async (req, res) => {
+  }
+
+  static async login(req, res) {
     try {
-      const { phone, otp } = req.body;
-      const isOtpValid = await driverService.verifyOtp(phone, otp);
-      if (!isOtpValid) return res.status(400).json({ message: "Invalid OTP" });
-
-      const driver = await driverService.verifyDriver(phone);
-      if (!driver) return res.status(404).json({ message: "Driver not found" });
-
-      const token = driverService.generateToken(driver);
-      res.status(200).json({ message: "Login successful", token });
+      const { contact_no } = req.body;
+      const otp = await driverService.sendOTP(contact_no);
+      res.json({ message: "Login OTP sent successfully" });
     } catch (error) {
-      res.status(500).json({ error: "Error verifying OTP" });
+      res.status(500).json({ error: error.message });
     }
-  },
-};
+  }
+
+  static async verifyLoginOTP(req, res) {
+    try {
+      const { contact_no, otp } = req.body;
+      const token = await driverService.verifyLoginOTP(contact_no, otp);
+      if (!token) {
+        return res.status(400).json({ error: "Invalid OTP" });
+      }
+      res.json({ token });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+  static async verifyOTP(req, res) {
+    try {
+      const { contact_no, otp } = req.body;
+      const isValid = await driverService.verifyOTP(contact_no, otp);
+
+      if (!isValid) {
+        return res.status(400).json({ error: "Invalid OTP" });
+      }
+      return res.status(200).json({ message: "OTP Verified Successfully" });
+    } catch (error) {
+      console.error("OTP Verification Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+}
+
+
+module.exports = DriverController;
+
+
+
+
+// const driverService = require('../services/driverService');
+// const { validateDriverInput } = require('../utils/validators');
+
+// class DriverController {
+//   static async registerDriver(req, res) {
+//     try {
+//       const { error } = validateDriverInput(req.body);
+//       if (error) {
+//         return res.status(400).json({ error: error.details[0].message });
+//       }
+
+//       const driver = await driverService.registerDriver(req.body);
+//       res.status(201).json(driver);
+//     } catch (error) {
+//       res.status(500).json({ error: error.message });
+//     }
+//   }
+
+//   static async selfSignup(req, res) {
+//     try {
+//       // const { error } = validateDriverInput(req.body);
+//       // if (error) {
+//       //   return res.status(400).json({ error: error.details[0].message });
+//       // }
+
+//       const { contact_no, license_no } = req.body;
+//       const exists = await driverService.checkDriverExists(contact_no, license_no);
+//       if (exists) {
+//         return res.status(400).json({ error: 'Driver already exists' });
+//       }
+
+//       const otp = await driverService.sendOTP(contact_no);
+//       res.json({ message: 'OTP sent successfully' });
+//     } catch (error) {
+//       res.status(500).json({ error: error.message });
+//     }
+//   }
+
+//   static async verifyOTP(req, res) {
+//     try {
+//       const { contact_no, otp } = req.body;
+//       const isValid = await driverService.verifyOTP(contact_no, otp);
+//       if (!isValid) {
+//         return res.status(400).json({ error: 'Invalid OTP' });
+//       }
+      
+//       const driver = await driverService.completeRegistration(req.body);
+//       res.status(201).json(driver);
+//     } catch (error) {
+//       res.status(500).json({ error: error.message });
+//     }
+//   }
+
+//   static async login(req, res) {
+//     try {
+//       const { contact_no } = req.body;
+//       const otp = await driverService.sendOTP(contact_no);
+//       res.json({ message: 'Login OTP sent successfully' });
+//     } catch (error) {
+//       res.status(500).json({ error: error.message });
+//     }
+//   }
+
+//   static async verifyLoginOTP(req, res) {
+//     try {
+//       const { contact_no, otp } = req.body;
+//       const token = await driverService.verifyLoginOTP(contact_no, otp);
+//       if (!token) {
+//         return res.status(400).json({ error: 'Invalid OTP' });
+//       }
+//       res.json({ token });
+//     } catch (error) {
+//       res.status(500).json({ error: error.message });
+//     }
+//   }
+// }
+
+// module.exports = DriverController;
