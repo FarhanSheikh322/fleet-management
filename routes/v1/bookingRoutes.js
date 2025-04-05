@@ -1,1 +1,9 @@
-const express = require('express'); const router = express.Router(); router.get('/', (req, res) => res.send('Booking routes')); module.exports = router;
+const express = require("express");
+const rideController = require("../../controllers/rideController");
+const router = express.Router();
+
+router.post("/", rideController.createRide);
+router.get("/upcoming/:driverId", rideController.getDriverUpcomingRides);
+router.get("/completed/:driverId", rideController.getDriverCompletedRides);
+
+module.exports = router;

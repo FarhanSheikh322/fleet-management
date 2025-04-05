@@ -1,7 +1,6 @@
-const createConnection = require("../db/dbConnect");
+const createConnection = require('../db/dbConnect');
 const moment = require("moment-timezone");
 
-console.log('service');
 
 const getAllCarDetails = async (
   schemaName,
@@ -11,6 +10,7 @@ const getAllCarDetails = async (
   status,
   country_id
 ) => {
+  console.log('service');
   let connection;
   try {
     const pool = await createConnection();
@@ -48,6 +48,8 @@ const getAllCarDetails = async (
 
     query += ` LIMIT ? OFFSET ?`;
     queryParams.push(size, offset);
+    console.log(query);
+    
 
     const [results] = await connection.query(query, queryParams);
     const [countResult] = await connection.query(
@@ -57,6 +59,9 @@ const getAllCarDetails = async (
     const totalElements = countResult[0].total_count;
 
     return { carDetails: results, totalElements };
+  }catch(error){
+    console.log(error);
+    return ;
   } finally {
     if (connection) connection.release();
   }

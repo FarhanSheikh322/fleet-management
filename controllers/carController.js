@@ -1,21 +1,26 @@
-const carService = require("../services/fleetCarDetails.service");
+const carService = require('../services/carService');
 
-console.log('controller');
 
 const getAllCarDetails = async (req, res) => {
   try {
+    console.log("📢 Controller reached: getAllCarDetails");
+
     const { page = 1, size = 10, search = "" } = req.query;
     const schemaName = req.headers["x-schema-name"];
+    console.log("🔍 Query params:", { page, size, search, schemaName });
+
     const result = await carService.getAllCarDetails(
       schemaName,
       Number(page),
       Number(size),
       search
     );
+
+    console.log("✅ Data fetched successfully:", result);
     res.status(200).json(result);
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: error.message });
+    console.error("❌ Error in getAllCarDetails:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
