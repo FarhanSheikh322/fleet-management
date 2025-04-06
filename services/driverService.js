@@ -4,15 +4,20 @@ const { generateOTP, sendSMS } = require("../util/helpers");
 
 class DriverService {
   static async checkDriverExists(contact_no, license_no) {
-    const contactExists = await Driver.checkContactExists(contact_no);
-    const licenseExists = await Driver.checkLicenseExists(license_no);
-    return contactExists || licenseExists;
+    try {
+      const contactExists = await Driver.checkContactExists(contact_no);
+      const licenseExists = await Driver.checkLicenseExists(license_no);
+      return contactExists || licenseExists;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   static async sendOTP(contact_no) {
     const lastOTP = await Driver.getLastOTP(contact_no);
     if (lastOTP && lastOTP.expires_in > Date.now() - 60 * 1000) {
-      return false; // Prevent multiple OTPs in short time
+      return false;
     }
 
     const otp = generateOTP();
@@ -25,8 +30,28 @@ class DriverService {
     return await Driver.verifyOTP(contact_no, otp);
   }
 
+  static async verifyLoginOTP(contact_no, otp) {
+    return await Driver.verifyLoginOTP(contact_no, otp);
+  }
+
   static async completeRegistration(driverDetails) {
     return await Driver.register(driverDetails);
+  }
+
+  static getDriverById(id) {
+    return Driver.getById(id);
+  }
+
+  static getAllDrivers(status) {
+    return Driver.getAll(status);
+  }
+
+  static updateDriverById(id, data) {
+    return Driver.updateById(id, data);
+  }
+
+  static softDeleteDriverById(id) {
+    return Driver.softDelete(id);
   }
 }
 

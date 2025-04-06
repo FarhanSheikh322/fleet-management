@@ -2,16 +2,19 @@ const express = require("express");
 const router = express.Router();
 const DriverController = require("../../controllers/driverController"); // Ensure correct path
 
-// Check if DriverController is undefined
-if (!DriverController) {
-  throw new Error("DriverController is not defined or not imported correctly.");
-}
+
 
 // Driver Signup & Login Routes
-router.post("/sendOTP", DriverController.selfSignup); // Send OTP for signup
-router.post("/signUp", DriverController.verifyOTP); // Verify OTP & register
-router.post("/login", DriverController.login); // Send OTP for login
+router.post("/sendSignOTP", DriverController.sendSignupOTP); // Send OTP for signup
+router.post("/signUp", DriverController.verifySignUpOTP); // Verify OTP & register
+router.post("/sendLoginOTP", DriverController.sendLoginOTP); // Send OTP for login
 router.post("/verifyLogin", DriverController.verifyLoginOTP); // Verify login OTP
+
+// Driver Crud
+router.get('/:id', DriverController.getDriverById);
+router.get('/', DriverController.getAllDrivers);
+router.put('/:id', DriverController.updateDriverById);
+router.delete('/:id', DriverController.deleteDriverById);
 
 module.exports = router;
 
