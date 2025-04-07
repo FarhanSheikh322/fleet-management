@@ -1,4 +1,6 @@
 const connection = require("../db/dbConnect");
+const config = require('../config');
+const schemaName = config.app.schemaName;
 
 class Driver {
   static async register(driverDetails) {
@@ -10,7 +12,7 @@ class Driver {
       const { name, age, contact_no, license_no, license_image } =
         driverDetails;
       const query = `
-        INSERT INTO drivers (name, age, contact_no, license_no, license_image, status)
+        INSERT INTO ${schemaName}.drivers (name, age, contact_no, license_no, license_image, status)
         VALUES (?, ?, ?, ?, ?, 'available')
       `;
       const values = [name, age, contact_no, license_no, license_image];
@@ -32,7 +34,7 @@ class Driver {
       conn = await pool.getConnection();
 
       const [rows] = await conn.execute(
-        "SELECT id FROM drivers WHERE contact_no = ?",
+        `SELECT id FROM ${schemaName}.drivers WHERE contact_no = ?`,
         [contact_no]
       );
       return rows.length > 0;
@@ -51,7 +53,7 @@ class Driver {
       conn = await pool.getConnection();
 
       const [rows] = await conn.execute(
-        "SELECT id FROM drivers WHERE license_no = ?",
+        `SELECT id FROM ${schemaName}.drivers WHERE license_no = ?`,
         [license_no]
       );
       return rows.length > 0;
@@ -71,7 +73,7 @@ class Driver {
 
       const expires_in = Date.now() + 5 * 60 * 1000; // 5 minutes
       const query = `
-        INSERT INTO otp (contact_no, otp, otp_type, expires_in, created_at)
+        INSERT INTO ${schemaName}.otp (contact_no, otp, otp_type, expires_in, created_at)
         VALUES (?, ?, ?, ?, ?)
       `;
       await conn.execute(query, [
@@ -97,7 +99,7 @@ class Driver {
 
       const expires_in = Date.now() + 5 * 60 * 1000; // 5 minutes
       const query = `
-        INSERT INTO drivers (contact_no, otp, otp_type, expires_in, created_at)
+        INSERT INTO ${schemaName}.otp (contact_no, otp, otp_type, expires_in, created_at)
         VALUES (?, ?, ?, ?, ?)
       `;
       await conn.execute(query, [
@@ -123,7 +125,7 @@ class Driver {
 
       const currentTime = Date.now();
       const query = `
-        SELECT * FROM otp 
+        SELECT * FROM ${schemaName}.otp 
         WHERE contact_no = ? AND otp = ? 
         AND expires_in > ? 
         ORDER BY created_at DESC LIMIT 1
@@ -146,7 +148,7 @@ class Driver {
 
       const currentTime = Date.now();
       const query = `
-        SELECT * FROM otp 
+        SELECT * FROM ${schemaName}.otp 
         WHERE contact_no = ? AND otp = ? 
         AND expires_in > ? 
         ORDER BY created_at DESC LIMIT 1
@@ -168,7 +170,7 @@ class Driver {
       conn = await pool.getConnection();
 
       const query = `
-        SELECT otp, expires_in FROM otp 
+        SELECT otp, expires_in FROM ${schemaName}.otp 
         WHERE contact_no = ? 
         ORDER BY created_at DESC LIMIT 1
       `;
@@ -188,7 +190,7 @@ class Driver {
       const pool = await connection();
       conn = await pool.getConnection();
       const [rows] = await conn.execute(
-        "SELECT * FROM drivers WHERE id = ? AND deleted_at IS NULL",
+        `SELECT * FROM ${schemaName}.drivers WHERE id = ? AND deleted_at IS NULL`,
         [id]
       );
       return rows[0];
@@ -205,7 +207,7 @@ class Driver {
     try {
       const pool = await connection();
       conn = await pool.getConnection();
-      let query = "SELECT * FROM drivers WHERE deleted_at IS NULL";
+      let query = `SELECT * FROM ${schemaName}.drivers WHERE deleted_at IS NULL`;
       const params = [];
       if (status) {
         query += " AND status = ?";
@@ -233,7 +235,7 @@ class Driver {
         values.push(data[key]);
       }
       values.push(id);
-      const query = `UPDATE drivers SET ${fields.join(", ")} WHERE id = ? AND deleted_at IS NULL`;
+      const query = `UPDATE ${schemaName}.drivers SET ${fields.join(", ")} WHERE id = ? AND deleted_at IS NULL`;
       const [result] = await conn.execute(query, values);
       return result.affectedRows;
     } catch (error) {
@@ -250,10 +252,10 @@ class Driver {
       const pool = await connection();
       conn = await pool.getConnection();
       const timestamp = Date.now();
-      await conn.execute("UPDATE drivers SET deleted_at = ? WHERE id = ?", [
-        timestamp,
-        id,
-      ]);
+      await conn.execute(
+        `UPDATE ${schemaName}.drivers SET deleted_at = ? WHERE id = ?`,
+        [timestamp, id]
+      );
     } catch (error) {
       console.log(error);
       return null;

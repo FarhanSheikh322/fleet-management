@@ -6,6 +6,7 @@ const { start } = require("applicationinsights");
 const PRIOR_TO_PICKUP = config.app.priorToPickupTime;
 const POST_DROP_TIME = config.app.postDropTime;
 const RIDE_DURATION = config.app.rideDurationTime;
+const schemaName = config.app.schemaName;
 
 function generateTransactionId(consumerId) {
   const date = moment().format("DDMMYY");
@@ -80,7 +81,7 @@ exports.createRide = async (rideData) => {
       drop_longitude
     );
 
-    const mapCarDriverSql = `INSERT INTO car_driver_map(car_id,driver_id,start_date_time,end_date_time)
+    const mapCarDriverSql = `INSERT INTO ${schemaName}.car_driver_map(car_id,driver_id,start_date_time,end_date_time)
   VALUES(?,?,?,?);`;
 
     const [mapped] = await conn.query(mapCarDriverSql, [
@@ -95,7 +96,7 @@ exports.createRide = async (rideData) => {
     const created_datetime = Date.now();
 
     const sql = `
-    INSERT INTO consumer_ride_details (
+    INSERT INTO ${schemaName}.consumer_ride_details (
       consumer_id, pickup_latitude, pickup_longitude,
       drop_latitude, drop_longitude, pickup_time, status,
       car_id, driver_id, request_id, distance_covered_km,
@@ -158,7 +159,7 @@ async function getConnectionAndQuery(sql, params) {
 
 exports.getRideDetailsByConsumerId = async (consumerId) => {
   const [data] = await getConnectionAndQuery(
-    "SELECT * FROM consumer_ride_details WHERE consumer_id = ?",
+    `SELECT * FROM ${schemaName}.consumer_ride_details WHERE consumer_id = ?`,
     [consumerId]
   );
   return data;
@@ -166,7 +167,7 @@ exports.getRideDetailsByConsumerId = async (consumerId) => {
 
 exports.getRideDetailsByTransactionId = async (transactionId) => {
   const [data] = await getConnectionAndQuery(
-    "SELECT * FROM consumer_ride_details WHERE transaction_id = ?",
+    `SELECT * FROM ${schemaName}.consumer_ride_details WHERE transaction_id = ?`,
     [transactionId]
   );
   return data;
@@ -174,7 +175,7 @@ exports.getRideDetailsByTransactionId = async (transactionId) => {
 
 exports.getRideDetailsByRequestId = async (requestId) => {
   const [data] = await getConnectionAndQuery(
-    "SELECT * FROM consumer_ride_details WHERE request_id = ?",
+    `SELECT * FROM ${schemaName}.consumer_ride_details WHERE request_id = ?`,
     [requestId]
   );
   return data;
@@ -182,7 +183,7 @@ exports.getRideDetailsByRequestId = async (requestId) => {
 
 exports.getRideDetailsByDriverId = async (driverId) => {
   const [data] = await getConnectionAndQuery(
-    "SELECT * FROM consumer_ride_details WHERE driver_id = ?",
+    `SELECT * FROM ${schemaName}.consumer_ride_details WHERE driver_id = ?`,
     [driverId]
   );
   return data;
@@ -190,7 +191,7 @@ exports.getRideDetailsByDriverId = async (driverId) => {
 
 exports.getRideDetailsByCarId = async (carId) => {
   const [data] = await getConnectionAndQuery(
-    "SELECT * FROM consumer_ride_details WHERE car_id = ?",
+    `SELECT * FROM ${schemaName}.consumer_ride_details WHERE car_id = ?`,
     [carId]
   );
   return data;

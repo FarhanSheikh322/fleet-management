@@ -20,8 +20,8 @@ const dbConfig = {
 	//acquireTimeout: 20000, // 20 seconds
 	//timeout: 30000, // 30 seconds for query execution
 	keepAliveInitialDelay: 10000, // 0 by default.
-	enableKeepAlive: true // false by default.
-	// ssl: { ca: fs.readFileSync('./db/certificate.pem') }
+	enableKeepAlive: true, // false by default.
+	ssl: { ca: fs.readFileSync('./db/certificate.pem') }
 };
 
 let pool;

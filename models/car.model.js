@@ -1,4 +1,6 @@
 const connection = require("../db/dbConnect");
+const config = require('../config');
+const schemaName = config.app.schemaName;
 
 class Car {
   static async add(carDetails) {
@@ -17,7 +19,7 @@ class Car {
       } = carDetails;
 
       const query = `
-        INSERT INTO cars (car_reg_no, car_color, car_description, car_seats, car_boot_space, car_model, status)
+        INSERT INTO ${schemaName}.cars (car_reg_no, car_color, car_description, car_seats, car_boot_space, car_model, status)
         VALUES (?, ?, ?, ?, ?, ?, 'available')
       `;
 
@@ -58,7 +60,7 @@ class Car {
       } = carDetails;
 
       const query = `
-        UPDATE cars 
+        UPDATE ${schemaName}.cars 
         SET car_reg_no = ?, car_color = ?, car_description = ?, 
             car_seats = ?, car_boot_space = ?, car_model = ?, status = ?
         WHERE id = ? AND deleted_at IS NULL
@@ -77,9 +79,10 @@ class Car {
 
       await conn.execute(query, values);
 
-      const [rows] = await conn.execute("SELECT * FROM cars WHERE id = ?", [
-        carId,
-      ]);
+      const [rows] = await conn.execute(
+        `SELECT * FROM ${schemaName}.cars WHERE id = ?`,
+        [carId]
+      );
       return rows[0];
     } catch (err) {
       console.error("Update Car Error:", err);
@@ -96,7 +99,7 @@ class Car {
       conn = await pool.getConnection();
 
       const [rows] = await conn.execute(
-        "SELECT * FROM cars WHERE id = ? AND deleted_at IS NULL",
+        `SELECT * FROM ${schemaName}.cars WHERE id = ? AND deleted_at IS NULL`,
         [carId]
       );
 
@@ -116,7 +119,7 @@ class Car {
       conn = await pool.getConnection();
 
       let query =
-        "SELECT SQL_CALC_FOUND_ROWS * FROM cars WHERE deleted_at IS NULL";
+        `SELECT SQL_CALC_FOUND_ROWS * FROM ${schemaName}.cars WHERE deleted_at IS NULL`;
       const values = [];
 
       if (filters.status) {
@@ -158,15 +161,16 @@ class Car {
       conn = await pool.getConnection();
 
       const query = `
-        UPDATE cars 
+        UPDATE ${schemaName}.cars 
         SET deleted_at = CURRENT_TIMESTAMP 
         WHERE id = ? AND deleted_at IS NULL
       `;
       await conn.execute(query, [carId]);
 
-      const [rows] = await conn.execute("SELECT * FROM cars WHERE id = ?", [
-        carId,
-      ]);
+      const [rows] = await conn.execute(
+        `SELECT * FROM ${schemaName}.cars WHERE id = ?`,
+        [carId]
+      );
       return rows[0];
     } catch (err) {
       console.error("Delete Car Error:", err);
