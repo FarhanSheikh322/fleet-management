@@ -4,10 +4,10 @@ const { validateCarInput } = require("../util/validators");
 class CarController {
   static async addCar(req, res) {
     try {
-      const { error } = validateCarInput(req.body);
-      if (error) {
-        return res.status(400).json({ error: error.details[0].message });
-      }
+      // const { error } = validateCarInput(req.body);
+      // if (error) {
+      //   return res.status(400).json({ error: error.details[0].message });
+      // }
 
       const car = await carService.addCar(req.body);
       console.log(car);

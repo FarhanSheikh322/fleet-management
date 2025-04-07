@@ -6,7 +6,7 @@ const validateCarInput = (data) => {
     car_color: Joi.string().required(),
     car_description: Joi.string().allow(""),
     car_seats: Joi.number().required(),
-    car_boot_space: Joi.number(),
+    car_boot_space: Joi.string(),
     status: Joi.string().valid("available", "on_ride", "maintenance"),
   });
 
