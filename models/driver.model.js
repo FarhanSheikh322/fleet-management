@@ -99,16 +99,9 @@ class Driver {
 
       const expires_in = Date.now() + 5 * 60 * 1000; // 5 minutes
       const query = `
-        INSERT INTO ${schemaName}.otp (contact_no, otp, otp_type, expires_in, created_at)
-        VALUES (?, ?, ?, ?, ?)
+        UPDATE ${schemaName}.drivers SET otp = ?, otp_type = ?, otp_expires_at = ? where contact_no = ?
       `;
-      await conn.execute(query, [
-        contact_no,
-        otp,
-        otp_type,
-        expires_in,
-        Date.now(),
-      ]);
+      await conn.execute(query, [otp,otp_type,expires_in,contact_no]);
     } catch (error) {
       console.log(error);
       return null;
@@ -148,9 +141,9 @@ class Driver {
 
       const currentTime = Date.now();
       const query = `
-        SELECT * FROM ${schemaName}.otp 
+        SELECT * FROM ${schemaName}.drivers 
         WHERE contact_no = ? AND otp = ? 
-        AND expires_in > ? 
+        AND otp_expires_at > ? AND otp_type = 'login'
         ORDER BY created_at DESC LIMIT 1
       `;
       const [rows] = await conn.execute(query, [contact_no, otp, currentTime]);
@@ -192,6 +185,24 @@ class Driver {
       const [rows] = await conn.execute(
         `SELECT * FROM ${schemaName}.drivers WHERE id = ? AND deleted_at IS NULL`,
         [id]
+      );
+      return rows[0];
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async getByContact(contact_no) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+      const [rows] = await conn.execute(
+        `SELECT * FROM ${schemaName}.drivers WHERE contact_no = ? AND deleted_at IS NULL`,
+        [contact_no]
       );
       return rows[0];
     } catch (error) {

@@ -12,6 +12,7 @@ router.post("/verifyLogin", DriverController.verifyLoginOTP); // Verify login OT
 
 // Driver Crud
 router.get('/:id', DriverController.getDriverById);
+router.get("/contact/:contact", DriverController.getDriverByContact);
 router.get('/', DriverController.getAllDrivers);
 router.put('/:id', DriverController.updateDriverById);
 router.delete('/:id', DriverController.deleteDriverById);

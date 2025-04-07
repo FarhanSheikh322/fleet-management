@@ -62,7 +62,7 @@ class DriverController {
       const { accessToken, refreshToken } = await getToken(tokenSub, {
         contact_no,
       });
-      console.log(accessToken, refreshToken);
+      // console.log(accessToken, refreshToken);
 
       res.status(httpStatus.OK).send({
         responseBody: { accessToken, refreshToken },
@@ -81,7 +81,7 @@ class DriverController {
       if (!contact_no) {
         return res.status(400).json({ message: "Invalid Number" });
       }
-      const otp = await driverService.sendOTP(contact_no);
+      const otp = await driverService.sendLoginOTP(contact_no);
       res.json({ message: "Login OTP sent successfully" });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -99,7 +99,7 @@ class DriverController {
       const { accessToken, refreshToken } = await getToken(tokenSub, {
         contact_no,
       });
-      console.log(accessToken, refreshToken);
+      // console.log(accessToken, refreshToken);
 
       res.status(httpStatus.OK).send({
         responseBody: { accessToken, refreshToken },
@@ -130,11 +130,23 @@ class DriverController {
     try {
       const driverId = req.params.id;
       console.log(driverId);
-      
+
       const driver = await driverService.getDriverById(driverId);
       if (!driver) {
-        return res.status(200).json({driver});
+        return res.status(200).json({ driver });
       }
+      res.status(200).json({ driver });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async getDriverByContact(req, res) {
+    try {
+      const contact = req.params.contact;
+      console.log(contact);
+
+      const driver = await driverService.getDriverByContact(contact);
       res.status(200).json({ driver });
     } catch (err) {
       res.status(500).json({ error: err.message });

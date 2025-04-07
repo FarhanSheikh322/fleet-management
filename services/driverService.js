@@ -14,7 +14,7 @@ class DriverService {
     }
   }
 
-  static async sendOTP(contact_no) {
+  static async sendSignUpOTP(contact_no) {
     const lastOTP = await Driver.getLastOTP(contact_no);
     if (lastOTP && lastOTP.expires_in > Date.now() - 60 * 1000) {
       return false;
@@ -22,6 +22,12 @@ class DriverService {
 
     const otp = generateOTP();
     await Driver.storeOTP(contact_no, otp, "registration");
+    await sendSMS(contact_no, `Your OTP is: ${otp}`);
+    return true;
+  }
+  static async sendLoginOTP(contact_no) {
+    const otp = generateOTP();
+    await Driver.storeLoginOTP(contact_no, otp, "login");
     await sendSMS(contact_no, `Your OTP is: ${otp}`);
     return true;
   }
@@ -40,6 +46,10 @@ class DriverService {
 
   static getDriverById(id) {
     return Driver.getById(id);
+  }
+
+  static getDriverByContact(contact) {
+    return Driver.getByContact(contact);
   }
 
   static getAllDrivers(status) {
