@@ -101,7 +101,7 @@ class Driver {
       const query = `
         UPDATE ${schemaName}.drivers SET otp = ?, otp_type = ?, otp_expires_at = ? where contact_no = ?
       `;
-      await conn.execute(query, [otp,otp_type,expires_in,contact_no]);
+      await conn.execute(query, [otp, otp_type, expires_in, contact_no]);
     } catch (error) {
       console.log(error);
       return null;
@@ -273,6 +273,46 @@ class Driver {
     } finally {
       if (conn) conn.release();
     }
+  }
+
+  static async getUpcomingRidesForDriver(driverId) {
+    const [rows] = await db.execute(
+      `
+      SELECT 
+        id, consumer_id, pickup_latitude, pickup_longitude, 
+        drop_latitude, drop_longitude, pickup_time, status, 
+        car_id, request_id, distance_covered_km, ride_otp,
+        transaction_id, pickup_location, drop_location, drop_time
+      FROM consumer_ride_details
+      WHERE driver_id = ?
+        AND pickup_time >= NOW()
+        AND status IN ('assigned')
+      ORDER BY pickup_time ASC
+    `,
+      [driverId]
+    );
+
+    return rows;
+  }
+
+  static async getOngoingRidesForDriver(driverId) {
+    const [rows] = await db.execute(
+      `
+      SELECT 
+        id, consumer_id, pickup_latitude, pickup_longitude, 
+        drop_latitude, drop_longitude, pickup_time, status, 
+        car_id, request_id, distance_covered_km, ride_otp,
+        transaction_id, pickup_location, drop_location, drop_time
+      FROM consumer_ride_details
+      WHERE driver_id = ?
+        AND pickup_time <= NOW()
+        AND status IN ('inprogress')
+      ORDER BY pickup_time ASC
+    `,
+      [driverId]
+    );
+
+    return rows;
   }
 }
 

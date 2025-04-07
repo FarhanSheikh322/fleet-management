@@ -183,6 +183,46 @@ class DriverController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  static async getDrvierUpcomingRides(req, res) {
+    const { driverId } = req.params;
+
+    if (!driverId) {
+      return res
+        .status(httpStatus.BAD_REQUEST)
+        .json({ message: "Driver ID is required" });
+    }
+
+    try {
+      const rides = await driverService.getUpcomingRidesForDriver(driverId);
+      return res.status(httpStatus.OK).json({ ride: rides });
+    } catch (error) {
+      console.error("Error fetching upcoming rides:", error);
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: "Something went wrong" });
+    }
+  }
+
+  static async getDrvierOngoingRides(req, res) {
+    const { driverId } = req.params;
+
+    if (!driverId) {
+      return res
+        .status(httpStatus.BAD_REQUEST)
+        .json({ message: "Driver ID is required" });
+    }
+
+    try {
+      const rides = await driverService.getDrvierOngoingRides(driverId);
+      return res.status(httpStatus.OK).json({ ride: rides });
+    } catch (error) {
+      console.error("Error fetching ongoing rides:", error);
+      return res
+        .status(httpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: "Something went wrong" });
+    }
+  }
 }
 
 

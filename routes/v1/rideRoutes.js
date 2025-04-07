@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const rideController = require('../../controllers/rideController');
 
-router.post("/create", rideController.createRide);
+router.post("/createRide", rideController.createRide);
+router.post("/startRide", rideController.startRide);
 router.get(
   "/by-consumer/:consumerId",
   rideController.getRideDetailsByConsumerId

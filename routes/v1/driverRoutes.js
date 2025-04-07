@@ -16,6 +16,8 @@ router.get("/contact/:contact", DriverController.getDriverByContact);
 router.get('/', DriverController.getAllDrivers);
 router.put('/:id', DriverController.updateDriverById);
 router.delete('/:id', DriverController.deleteDriverById);
+router.get('/upcomingRides/:id', DriverController.getDrvierUpcomingRides);
+router.get("/ongoingRides/:id", DriverController.getDrvierOngoingRides);
 
 module.exports = router;
 

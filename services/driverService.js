@@ -63,6 +63,14 @@ class DriverService {
   static softDeleteDriverById(id) {
     return Driver.softDelete(id);
   }
+
+  static getUpcomingRidesForDriver(driverId) {
+    return Driver.getUpcomingRidesForDriver(driverId);
+  }
+
+  static getUpcomingRidesForDriver(driverId) {
+    return Driver.getOngoingRidesForDriver(driverId);
+  }
 }
 
 module.exports = DriverService;

@@ -196,3 +196,41 @@ exports.getRideDetailsByCarId = async (carId) => {
   );
   return data;
 };
+
+
+exports.startRide = async (transactionId, otp) => {
+  const pool = await connection();
+  const conn = await pool.getConnection();
+  try {
+    const [rideData] = await conn.query(
+      `
+      SELECT * FROM ${schemaName}.consumer_ride_details
+      WHERE transaction_id = ? AND ride_otp = ? AND status = 'assigned'
+      LIMIT 1
+      `,
+      [transactionId, otp]
+    );
+
+    if (rideData) {
+      const [updated] = await conn.query(
+        `
+      UPDATE ${schemaName}.consumer_ride_details
+      SET status = 'inprogress'
+      WHERE transaction_id = ?
+      `,
+        [transactionId]
+      );
+      if (!updated) {
+        return { success: false, message: "Failed to start ride" };
+      }
+    } else {
+      return { success: false, message: "Invalid OTP" };
+    }
+    return { success: true, message: "Ride started successfully" };
+  } catch (error) {
+    console.log(error);
+    return { success: false, message: "Failed to start ride" };
+  } finally {
+    conn.release();
+  }
+};

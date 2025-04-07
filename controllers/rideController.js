@@ -62,3 +62,14 @@ exports.getRideDetailsByCarId = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+exports.startRide = async (req,res)=>{
+  try {
+    const {transactionId, otp} = req.body;
+    const ride = await rideService.startRide(transactionId,otp);
+    res.status(200).json({ success: true, ride });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
