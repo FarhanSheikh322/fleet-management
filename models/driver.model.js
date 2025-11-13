@@ -1,0 +1,319 @@
+const connection = require("../db/dbConnect");
+const config = require('../config');
+const schemaName = config.app.schemaName;
+
+class Driver {
+  static async register(driverDetails) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+
+      const { name, age, contact_no, license_no, license_image } =
+        driverDetails;
+      const query = `
+        INSERT INTO ${schemaName}.drivers (name, age, contact_no, license_no, license_image, status)
+        VALUES (?, ?, ?, ?, ?, 'available')
+      `;
+      const values = [name, age, contact_no, license_no, license_image];
+      const [result] = await conn.execute(query, values);
+
+      return { ...driverDetails, id: result.insertId, status: "available" };
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async checkContactExists(contact_no) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+
+      const [rows] = await conn.execute(
+        `SELECT id FROM ${schemaName}.drivers WHERE contact_no = ?`,
+        [contact_no]
+      );
+      return rows.length > 0;
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async checkLicenseExists(license_no) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+
+      const [rows] = await conn.execute(
+        `SELECT id FROM ${schemaName}.drivers WHERE license_no = ?`,
+        [license_no]
+      );
+      return rows.length > 0;
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async storeOTP(contact_no, otp, otp_type) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+
+      const expires_in = Date.now() + 5 * 60 * 1000; // 5 minutes
+      const query = `
+        INSERT INTO ${schemaName}.otp (contact_no, otp, otp_type, expires_in, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `;
+      await conn.execute(query, [
+        contact_no,
+        otp,
+        otp_type,
+        expires_in,
+        Date.now(),
+      ]);
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async storeLoginOTP(contact_no, otp, otp_type) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+
+      const expires_in = Date.now() + 5 * 60 * 1000; // 5 minutes
+      const query = `
+        UPDATE ${schemaName}.drivers SET otp = ?, otp_type = ?, otp_expires_at = ? where contact_no = ?
+      `;
+      await conn.execute(query, [otp, otp_type, expires_in, contact_no]);
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async verifyOTP(contact_no, otp) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+
+      const currentTime = Date.now();
+      const query = `
+        SELECT * FROM ${schemaName}.otp 
+        WHERE contact_no = ? AND otp = ? 
+        AND expires_in > ? 
+        ORDER BY created_at DESC LIMIT 1
+      `;
+      const [rows] = await conn.execute(query, [contact_no, otp, currentTime]);
+      return rows.length > 0;
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async verifyLoginOTP(contact_no, otp) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+
+      const currentTime = Date.now();
+      const query = `
+        SELECT * FROM ${schemaName}.drivers 
+        WHERE contact_no = ? AND otp = ? 
+        AND otp_expires_at > ? AND otp_type = 'login'
+        ORDER BY created_at DESC LIMIT 1
+      `;
+      const [rows] = await conn.execute(query, [contact_no, otp, currentTime]);
+      return rows.length > 0;
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async getLastOTP(contact_no) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+
+      const query = `
+        SELECT otp, expires_in FROM ${schemaName}.otp 
+        WHERE contact_no = ? 
+        ORDER BY created_at DESC LIMIT 1
+      `;
+      const [rows] = await conn.execute(query, [contact_no]);
+      return rows.length > 0 ? rows[0] : null;
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async getById(id) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+      const [rows] = await conn.execute(
+        `SELECT * FROM ${schemaName}.drivers WHERE id = ? AND deleted_at IS NULL`,
+        [id]
+      );
+      return rows[0];
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async getByContact(contact_no) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+      const [rows] = await conn.execute(
+        `SELECT * FROM ${schemaName}.drivers WHERE contact_no = ? AND deleted_at IS NULL`,
+        [contact_no]
+      );
+      return rows[0];
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async getAll(status) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+      let query = `SELECT * FROM ${schemaName}.drivers WHERE deleted_at IS NULL`;
+      const params = [];
+      if (status) {
+        query += " AND status = ?";
+        params.push(status);
+      }
+      const [rows] = await conn.execute(query, params);
+      return rows;
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async updateById(id, data) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+      const fields = [];
+      const values = [];
+      for (let key in data) {
+        fields.push(`${key} = ?`);
+        values.push(data[key]);
+      }
+      values.push(id);
+      const query = `UPDATE ${schemaName}.drivers SET ${fields.join(", ")} WHERE id = ? AND deleted_at IS NULL`;
+      const [result] = await conn.execute(query, values);
+      return result.affectedRows;
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async softDelete(id) {
+    let conn;
+    try {
+      const pool = await connection();
+      conn = await pool.getConnection();
+      const timestamp = Date.now();
+      await conn.execute(
+        `UPDATE ${schemaName}.drivers SET deleted_at = ? WHERE id = ?`,
+        [timestamp, id]
+      );
+    } catch (error) {
+      console.log(error);
+      return null;
+    } finally {
+      if (conn) conn.release();
+    }
+  }
+
+  static async getUpcomingRidesForDriver(driverId) {
+    const [rows] = await db.execute(
+      `
+      SELECT 
+        id, consumer_id, pickup_latitude, pickup_longitude, 
+        drop_latitude, drop_longitude, pickup_time, status, 
+        car_id, request_id, distance_covered_km, ride_otp,
+        transaction_id, pickup_location, drop_location, drop_time
+      FROM consumer_ride_details
+      WHERE driver_id = ?
+        AND pickup_time >= NOW()
+        AND status IN ('assigned')
+      ORDER BY pickup_time ASC
+    `,
+      [driverId]
+    );
+
+    return rows;
+  }
+
+  static async getOngoingRidesForDriver(driverId) {
+    const [rows] = await db.execute(
+      `
+      SELECT 
+        id, consumer_id, pickup_latitude, pickup_longitude, 
+        drop_latitude, drop_longitude, pickup_time, status, 
+        car_id, request_id, distance_covered_km, ride_otp,
+        transaction_id, pickup_location, drop_location, drop_time
+      FROM consumer_ride_details
+      WHERE driver_id = ?
+        AND pickup_time <= NOW()
+        AND status IN ('inprogress')
+      ORDER BY pickup_time ASC
+    `,
+      [driverId]
+    );
+
+    return rows;
+  }
+}
+
+module.exports = Driver;
